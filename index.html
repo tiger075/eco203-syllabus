@@ -1244,4 +1244,160 @@
         ]
       }
     ];
+const STORAGE_KEY = "eco203_session_status";
+
+    function loadStatus() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return {};
+        return JSON.parse(raw);
+      } catch {
+        return {};
+      }
+    }
+
+    function saveStatus(status) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(status));
+    }
+
+    function updateProgress() {
+      const status = loadStatus();
+      let completed = 0;
+      sessions.forEach(s => { if (status[s.num]) completed++; });
+      const remaining = sessions.length - completed;
+      document.getElementById("progress-text").textContent =
+        `You have completed ${completed} out of ${sessions.length} sessions.`;
+      document.getElementById("completed-pill").textContent = `Completed: ${completed}`;
+      document.getElementById("remaining-pill").textContent = `Remaining: ${remaining}`;
+    }
+
+    function renderSessions() {
+      const container = document.getElementById("session-list");
+      const status = loadStatus();
+      container.innerHTML = "";
+
+      sessions.forEach(session => {
+        const card = document.createElement("div");
+        card.className = "session-card";
+        if (status[session.num]) card.classList.add("completed");
+
+        const header = document.createElement("div");
+        header.className = "session-header";
+
+        const left = document.createElement("div");
+        left.innerHTML =
+          `<div class="session-title">Session ${session.num}: ${session.topic}</div>
+           <div class="session-meta">
+             <span>${session.unit}</span>
+             <span>1 hour</span>
+           </div>`;
+        header.appendChild(left);
+
+        const toggleHint = document.createElement("div");
+        toggleHint.className = "small";
+        toggleHint.textContent = "Click to expand";
+        header.appendChild(toggleHint);
+
+        const body = document.createElement("div");
+        body.className = "session-body";
+
+        const cols = document.createElement("div");
+        cols.className = "session-columns";
+
+        const c1 = document.createElement("div");
+        c1.innerHTML = `<div class="section-label">Coverage</div>`;
+        const covList = document.createElement("ul");
+        session.coverage.forEach(item => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          covList.appendChild(li);
+        });
+        c1.appendChild(covList);
+
+        const c2 = document.createElement("div");
+        c2.innerHTML = `<div class="section-label">Class Interaction</div>`;
+        const intList = document.createElement("ul");
+        session.interaction.forEach(item => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          intList.appendChild(li);
+        });
+        c2.appendChild(intList);
+
+        cols.appendChild(c1);
+        cols.appendChild(c2);
+
+        const resDiv = document.createElement("div");
+        resDiv.innerHTML = `<div class="section-label">Key Resources</div>`;
+        const resTags = document.createElement("div");
+        resTags.className = "resource-tags";
+        session.resources.forEach(r => {
+          const span = document.createElement("span");
+          span.textContent = r;
+          resTags.appendChild(span);
+        });
+        resDiv.appendChild(resTags);
+
+        const footer = document.createElement("div");
+        footer.className = "session-footer";
+
+        const leftFooter = document.createElement("div");
+        const slidesLink = document.createElement("a");
+        slidesLink.href = "#"; // replace with your slides link
+        slidesLink.target = "_blank";
+        slidesLink.className = "btn-link primary";
+        slidesLink.textContent = "Slides";
+
+        const matLink = document.createElement("a");
+        matLink.href = "#"; // replace with your materials link
+        matLink.target = "_blank";
+        matLink.className = "btn-link";
+        matLink.textContent = "Materials";
+
+        leftFooter.appendChild(slidesLink);
+        leftFooter.appendChild(matLink);
+
+        const rightFooter = document.createElement("label");
+        rightFooter.className = "checkbox-label";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = !!status[session.num];
+        cb.addEventListener("change", () => {
+          const st = loadStatus();
+          if (cb.checked) {
+            st[session.num] = true;
+            card.classList.add("completed");
+          } else {
+            delete st[session.num];
+            card.classList.remove("completed");
+          }
+          saveStatus(st);
+          updateProgress();
+        });
+        rightFooter.appendChild(cb);
+        rightFooter.appendChild(document.createTextNode("Completed"));
+
+        footer.appendChild(leftFooter);
+        footer.appendChild(rightFooter);
+
+        body.appendChild(cols);
+        body.appendChild(resDiv);
+        body.appendChild(footer);
+
+        header.addEventListener("click", (e) => {
+          if (e.target.tagName === "INPUT" || e.target.tagName === "A") return;
+          body.classList.toggle("open");
+          toggleHint.textContent = body.classList.contains("open") ? "Click to collapse" : "Click to expand";
+        });
+
+        card.appendChild(header);
+        card.appendChild(body);
+        container.appendChild(card);
+      });
+
+      updateProgress();
+    }
+
+    document.addEventListener("DOMContentLoaded", renderSessions);
+  </script>
 
